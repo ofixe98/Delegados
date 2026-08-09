@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="pt-PT">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#172033">
+<link rel="manifest" href="./manifest.webmanifest">
+<title>Delegado AFL</title>
+<style>
+body{margin:0;background:#f4f6f8;color:#172033;font-family:Arial,sans-serif}
+.app{max-width:700px;margin:auto;padding:20px 16px 90px}
+h1{font-size:30px;margin:5px 0}.muted{color:#667085;font-size:14px}
+.card{background:#fff;border:1px solid #ddd;border-radius:16px;padding:16px;margin:10px 0}
+.btn{display:block;width:100%;padding:13px;border:0;border-radius:12px;background:#172033;color:#fff;font-weight:bold;margin-top:10px}
+.light{background:#fff;color:#172033;border:1px solid #ddd}.danger{background:#b42318}
+.green{background:#087443}.back{background:#fff;border:1px solid #ddd;border-radius:10px;padding:9px}
+.head{display:flex;gap:10px;align-items:center}.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.field{width:100%;padding:12px;border:1px solid #ddd;border-radius:10px;margin:6px 0;box-sizing:border-box;font:inherit}
+.task{background:#fff;border:1px solid #ddd;border-radius:14px;padding:13px;margin:8px 0}
+.taskrow{display:flex;gap:8px;align-items:flex-start}.taskrow input{width:21px;height:21px}
+.taskrow button{border:0;background:none;text-align:left;flex:1;font-weight:bold;padding:0}
+.detail{border-top:1px solid #eee;margin-top:10px;padding-top:10px;font-size:14px}
+.notice{background:#ecfdf3;color:#166534;padding:12px;border-radius:12px;margin:10px 0;font-size:13px}
+.nav{position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:1px solid #ddd;display:flex;justify-content:space-around;padding:9px;z-index:5}
+.nav button{border:0;background:none;font-size:12px}.empty{text-align:center;color:#667085;padding:25px}
+.timer{text-align:center;font-size:30px;font-weight:bold;padding:15px}
+</style>
+</head>
+<body><div id="app"></div>
+<script>
+(function(){
+"use strict";
+var F11="./docs/RPO-26-27-FUTEBOL-11-SENIORES_v11.pdf";
+var FUTSAL="./docs/AGE-20260627-AVISO-CONVOCATORIO-SIGNED-VF-ERRATA.pdf";
+var REG={
+fut11:{name:"Futebol 11",icon:"⚽",doc:"RPO Futebol 11 Seniores 2026/27",pdf:F11,page:31,
+tasks:["Dirigir a reunião preparatória","Ação preventiva e pedagógica / fair play","Verificar condições de segurança","Verificar condições técnicas do campo","Fiscalizar normas e deliberações AFL","Elaborar relatório circunstanciado","Comunicar factos transmitidos oficialmente","Vistoriar vestiários/balneários","Consignar denúncias dos delegados dos clubes","Verificar apanha-bolas","Verificar percursos pedonais"],arts:["125.2(a)","125.2(b)","125.2(c)","125.2(d)","125.2(e)","125.2(f)","125.2(g)","125.2(h)","125.2(i)","125.2(j)","125.2(k)"],page:31},
+futsal:{name:"Futsal",icon:"🟦",doc:"RPO Futsal 2026/27",pdf:FUTSAL,page:38,
+tasks:["Dirigir a reunião preparatória","Ação preventiva e pedagógica / fair play","Verificar condições de segurança do pavilhão","Verificar condições técnicas do campo","Fiscalizar normas e deliberações AFL","Elaborar relatório circunstanciado","Comunicar factos transmitidos oficialmente","Vistoriar vestiários/balneários","Consignar denúncias dos delegados dos clubes","Verificar percursos pedonais"],arts:["5125.2(a)","5125.2(b)","5125.2(c)","5125.2(d)","5125.2(e)","5125.2(f)","5125.2(g)","5125.2(h)","5125.2(i)","5125.2(j)"],page:38}};
+var data;
+try{data=JSON.parse(localStorage.getItem("delegado_afl_v10")||'{"games":[],"currentId":null}')}catch(e){data={games:[],currentId:null}}
+var current=null, expanded=-1, running=false;
+
+function save(){localStorage.setItem("delegado_afl_v10",JSON.stringify(data))}
+function getCurrent(){for(var i=0;i<data.games.length;i++)if(data.games[i].id===data.currentId)return data.games[i];return null}
+function nav(){return '<div class="nav"><button onclick="home()">🏠<br>Início</button><button onclick="games()">📅<br>Jogos</button><button onclick="rules()">📚<br>Regras</button></div>'}
+function render(x){document.getElementById("app").innerHTML='<div class="app">'+x+'</div>'+nav()}
+function home(){current=getCurrent();render('<div><div class="muted">AFL • 2026/27</div><h1>🛡️ Delegado AFL</h1><div class="muted">V10.7 • Futebol 11 + Futsal</div></div>'+
+(current?'<div class="card"><b>'+esc(current.home)+' × '+esc(current.away)+'</b><div class="muted">'+REG[current.mode].name+' • '+esc(current.date||"Sem data")+'</div><button class="btn" onclick="openGame()">⚽ Abrir Dia de Jogo</button></div>':'<div class="card"><b>Nenhum jogo selecionado</b><button class="btn" onclick="games()">📅 Criar jogo</button></div>')+
+'<div class="grid"><div class="card">📋<br><b>Checklist</b><div class="muted">'+(current?current.checks.filter(Boolean).length+"/"+REG[current.mode].tasks.length:"—")+'</div></div><div class="card">🚨<br><b>Ocorrências</b><div class="muted">'+(current?current.occs.length:"—")+'</div></div></div>')}
+function esc(s){return String(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/"/g,"&quot;")}
+function games(){var s='<div class="head"><button class="back" onclick="home()">←</button><h2>📅 Meus Jogos</h2></div><button class="btn" onclick="editGame(null)">➕ Novo jogo</button>';if(!data.games.length)s+='<div class="empty">Ainda não existem jogos.</div>';data.games.forEach(function(g){s+='<div class="card"><b>'+esc(g.home)+' × '+esc(g.away)+'</b><div class="muted">'+REG[g.mode].name+' • '+esc(g.date||"Sem data")+' • '+esc(g.place||"Sem local")+'</div><button class="btn light" onclick="selectGame('+g.id+')">Abrir</button><button class="btn light" onclick="editGame('+g.id+')">✏️ Editar</button><button class="btn danger" onclick="deleteGame('+g.id+')">🗑️ Apagar</button></div>'});render(s)}
+function editGame(id){var g=null;if(id!==null)for(var i=0;i<data.games.length;i++)if(data.games[i].id===id)g=data.games[i];g=g||{home:"",away:"",date:"",time:"",place:"",mode:"fut11",checks:[],occs:[],notes:"",started:null,finished:false};render('<div class="head"><button class="back" onclick="games()">←</button><h2>'+((id===null)?"➕ Novo jogo":"✏️ Editar jogo")+'</h2></div><input id="homeClub" class="field" placeholder="Clube da casa" value="'+esc(g.home)+'"><input id="awayClub" class="field" placeholder="Clube visitante" value="'+esc(g.away)+'"><input id="gameDate" class="field" type="date" value="'+esc(g.date)+'"><input id="gameTime" class="field" type="time" value="'+esc(g.time)+'"><input id="gamePlace" class="field" placeholder="🏟️ Local" value="'+esc(g.place)+'"><select id="gameMode" class="field"><option value="fut11" '+(g.mode==="fut11"?"selected":"")+'>⚽ Futebol 11</option><option value="futsal" '+(g.mode==="futsal"?"selected":"")+'>🟦 Futsal</option></select><button class="btn" onclick="saveGame('+String(id)+')">💾 Guardar jogo</button>')}
+function saveGame(id){var g={id:id===null?Date.now():id,home:document.getElementById("homeClub").value,away:document.getElementById("awayClub").value,date:document.getElementById("gameDate").value,time:document.getElementById("gameTime").value,place:document.getElementById("gamePlace").value,mode:document.getElementById("gameMode").value,checks:[],occs:[],notes:"",started:null,finished:false};if(id!==null){for(var i=0;i<data.games.length;i++)if(data.games[i].id===id){g.checks=data.games[i].checks;g.occs=data.games[i].occs;g.notes=data.games[i].notes;g.started=data.games[i].started;g.finished=data.games[i].finished;data.games[i]=g;break}}else data.games.push(g);data.currentId=g.id;save();home()}
+function selectGame(id){data.currentId=id;save();openGame()}
+function deleteGame(id){if(!confirm("Apagar este jogo e todos os seus registos?"))return;data.games=data.games.filter(function(g){return g.id!==id});if(data.currentId===id)data.currentId=null;save();games()}
+function openGame(){current=getCurrent();if(!current){games();return}if(current.started&&!current.finished){running=true;live();return}running=false;checklist()}
+function checklist(){current=getCurrent();var d=REG[current.mode],s='<div class="head"><button class="back" onclick="home()">←</button><h2>'+d.icon+' Dia de Jogo</h2></div><div class="card"><b>'+esc(current.home)+' × '+esc(current.away)+'</b><div class="muted">'+d.name+' • '+esc(current.date||"Sem data")+' • '+esc(current.place||"Sem local")+'</div><button class="btn light" onclick="editGame('+current.id+')">✏️ Editar dados</button></div><div class="notice">Cada tarefa tem agora o botão direto para a referência regulamentar.</div>';d.tasks.forEach(function(t,i){s+='<div class="task"><div class="taskrow"><input type="checkbox" '+(current.checks[i]?"checked":"")+' onchange="markTask('+i+',this.checked)"><div style="flex:1"><b>'+t+'</b><div class="muted">'+(current.checks[i]?"🟢 Concluído":"⚪ Pendente")+'</div></div></div><div class="detail"><b>📖 '+d.doc+'</b><br><span class="muted">Artigo: '+d.arts[i]+' • página PDF '+d.page+'</span><br><a class="btn light" href="'+d.pdf+'#page='+d.page+'" target="_blank" rel="noopener noreferrer">📄 Abrir referência</a></div></div>'});s+='<button class="btn green" onclick="startGame()">🟢 Iniciar Jogo</button>';render(s)}
+function markTask(i,v){current=getCurrent();current.checks[i]=v;sync();checklist()}
+function sync(){for(var i=0;i<data.games.length;i++)if(data.games[i].id===current.id){data.games[i]=current;break}save()}
+function startGame(){current=getCurrent();current.started=Date.now();current.finished=false;sync();running=true;live()}
+function live(){current=getCurrent();render('<div class="head"><button class="back" onclick="home()">←</button><h2>🟢 Jogo em curso</h2></div><div class="card"><b>'+esc(current.home)+' × '+esc(current.away)+'</b><div class="muted">'+REG[current.mode].name+'</div><div class="timer" id="timer">00:00:00</div></div><div class="grid"><button class="card" onclick="newOcc()">🚨<br><b>Nova ocorrência</b></button><button class="card" onclick="occurrences()">📋<br><b>Ocorrências</b><div class="muted">'+current.occs.length+'</div></button></div><textarea id="liveNotes" class="field" rows="4" placeholder="📝 Notas durante o jogo">'+esc(current.notes)+'</textarea><button class="btn" onclick="saveNotes()">💾 Guardar notas</button><button class="btn danger" onclick="finishGame()">🏁 Terminar jogo</button>');tick()}
+function tick(){var el=document.getElementById("timer");if(!el||!current||!current.started)return;var sec=Math.floor((Date.now()-current.started)/1000),h=Math.floor(sec/3600),m=Math.floor((sec%3600)/60),s=sec%60;el.textContent=[h,m,s].map(function(x){return String(x).padStart(2,"0")}).join(":");setTimeout(tick,1000)}
+function saveNotes(){current=getCurrent();current.notes=document.getElementById("liveNotes").value;sync();live()}
+function newOcc(){render('<div class="head"><button class="back" onclick="live()">←</button><h2>🚨 Ocorrência</h2></div><select id="occType" class="field"><option>Segurança</option><option>Comportamento de adepto</option><option>Jogador</option><option>Equipa técnica</option><option>Arbitragem</option><option>Infraestrutura</option><option>Outro</option></select><input id="occLoc" class="field" placeholder="📍 Local"><textarea id="occDesc" class="field" rows="5" placeholder="📝 Descrição"></textarea><textarea id="occMeasures" class="field" rows="3" placeholder="🛡️ Medidas tomadas"></textarea><button class="btn" onclick="saveOcc()">💾 Guardar ocorrência</button>')}
+function saveOcc(){current=getCurrent();current.occs.push({type:document.getElementById("occType").value,loc:document.getElementById("occLoc").value,desc:document.getElementById("occDesc").value,meas:document.getElementById("occMeasures").value,time:new Date().toLocaleTimeString("pt-PT",{hour:"2-digit",minute:"2-digit"})});sync();live()}
+function occurrences(){current=getCurrent();var s='<div class="head"><button class="back" onclick="live()">←</button><h2>🚨 Ocorrências</h2></div>';if(!current.occs.length)s+='<div class="empty">Nenhuma ocorrência.</div>';current.occs.forEach(function(o){s+='<div class="card"><b>'+o.time+' • '+esc(o.type)+'</b><p><b>'+esc(o.loc||"Local não indicado")+'</b></p><div>'+esc(o.desc||"Sem descrição")+'</div><small>Medidas: '+esc(o.meas||"—")+'</small></div>'});render(s)}
+function finishGame(){current=getCurrent();current.finished=true;current.finishedAt=Date.now();sync();report()}
+function report(){current=getCurrent();var d=REG[current.mode];render('<div class="head"><button class="back" onclick="home()">←</button><h2>📄 Relatório</h2></div><div class="notice"><b>'+esc(current.home)+' × '+esc(current.away)+'</b><br>'+d.name+' • '+esc(current.date||"Sem data")+' • '+esc(current.place||"Sem local")+'</div><div class="card"><b>Checklist</b><p>'+current.checks.filter(Boolean).length+'/'+d.tasks.length+' concluídas</p><b>Ocorrências</b><p>'+current.occs.length+' registadas</p><b>Notas</b><p>'+esc(current.notes||"Sem notas.")+'</p></div><button class="btn" onclick="games()">📅 Voltar aos jogos</button>')}
+function rules(){render('<div class="head"><button class="back" onclick="home()">←</button><h2>📚 Regulamentos</h2></div><div class="card"><b>⚽ Futebol 11</b><div class="muted">'+REG.fut11.doc+'</div><a class="btn" href="'+F11+'#page=31" target="_blank" rel="noopener noreferrer">📄 Abrir RPO Futebol 11</a><a class="btn light" href="'+F11+'" download>⬇️ Descarregar PDF</a></div><div class="card"><b>🟦 Futsal</b><div class="muted">'+REG.futsal.doc+'</div><a class="btn" href="'+FUTSAL+'#page=200" target="_blank" rel="noopener noreferrer">📄 Abrir RPO Futsal</a><a class="btn light" href="'+FUTSAL+'" download>⬇️ Descarregar PDF</a></div><h3>📢 Comunicados Oficiais AFL</h3><div class="card"><b>📢 CO 001 26-27 — Comunicado Oficial 1</b><div class="muted">03/07/2026</div><a class="btn" href="./docs/CO-001-26-27-COMUNICADO-OFICIAL-1.pdf" target="_blank" rel="noopener noreferrer">📄 Abrir CO 001 2026/27</a><a class="btn light" href="./docs/CO-001-26-27-COMUNICADO-OFICIAL-1.pdf" download>⬇️ Descarregar CO 001</a></div>')}
+window.home=home;window.games=games;window.editGame=editGame;window.saveGame=saveGame;window.selectGame=selectGame;window.deleteGame=deleteGame;window.openGame=openGame;window.checklist=checklist;window.markTask=markTask;window.startGame=startGame;window.live=live;window.saveNotes=saveNotes;window.newOcc=newOcc;window.saveOcc=saveOcc;window.occurrences=occurrences;window.finishGame=finishGame;window.report=report;window.rules=rules;
+home();
+
+})();
+if("serviceWorker" in navigator){window.addEventListener("load",function(){navigator.serviceWorker.register("./service-worker.js").catch(function(){});});}</script></body></html>
