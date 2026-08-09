@@ -1,4 +1,4 @@
-const CACHE = 'delegado-afl-v10-7-offline';
+const CACHE = 'delegado-afl-v10-8-offline';
 const ASSETS = [
   './',
   './index.html',
