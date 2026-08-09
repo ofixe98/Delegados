@@ -1,9 +1,1 @@
-{
-  "name":"Delegado AFL",
-  "short_name":"Delegado AFL",
-  "start_url":".",
-  "display":"standalone",
-  "background_color":"#f8fafc",
-  "theme_color":"#111827",
-  "lang":"pt-PT"
-}
+{"name":"Delegado AFL","short_name":"Delegado AFL","start_url":"./","display":"standalone","background_color":"#f4f6f8","theme_color":"#172033","lang":"pt-PT","icons":[]}
